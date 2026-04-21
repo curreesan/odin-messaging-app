@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# env files
+.env
+.env.*
+
+# logs
+logs
+*.log
+
+# OS
+.DS_Store
+
+# build outputs
+dist/
+build/
+
+# prisma
+prisma/migrations/
