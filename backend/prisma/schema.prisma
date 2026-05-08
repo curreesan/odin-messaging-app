@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client.js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+model Profile {
+  id          String   @id   // Supabase UUID
+  username    String   @unique
+  name        String?
+  bio         String?
+  avatar_url  String?
+  created_at  DateTime @default(now())
+
+  // friendships
+  sentFriendships     Friendship[] @relation("sent")
+  receivedFriendships Friendship[] @relation("received")
+
+  // messages
+  messages Message[]
+
+  // conversations (through join table)
+  conversations ConversationParticipant[]
+}
+
+model Friendship {
+  id          String   @id @default(uuid())
+  sender_id   String
+  receiver_id String
+  status      FriendshipStatus @default(PENDING)
+  created_at  DateTime @default(now())
+
+  sender   Profile @relation("sent", fields: [sender_id], references: [id])
+  receiver Profile @relation("received", fields: [receiver_id], references: [id])
+
+  @@unique([sender_id, receiver_id])
+}
+
+model Conversation {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id              String   @id @default(uuid())
+  conversation_id String
+  user_id         String
+  joined_at       DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id])
+  user         Profile     @relation(fields: [user_id], references: [id])
+
+  @@unique([conversation_id, user_id])
+}
+
+model Message {
+  id              String   @id @default(uuid())
+  conversation_id String
+  sender_id       String
+  content         String
+  sent_at         DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id])
+  sender       Profile     @relation(fields: [sender_id], references: [id])
+}
