@@ -1,6 +1,6 @@
-import jwt from "jsonwebtoken";
+import supabase from "../lib/supabase.js";
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -13,38 +13,24 @@ const authMiddleware = (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({
-        error: "Unauthorized",
-        message: "Access token is required",
-      });
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error) {
+      return res.status(401).json({ error: "Invalid token" });
     }
 
-    const decoded = jwt.verify(token, process.env.SUPABASE_JWT_SECRET);
+    if (!data.user) {
+      return res.status(401).json({ error: "User not found" });
+    }
 
     req.user = {
-      id: decoded.sub,
-      email: decoded.email,
+      id: data.user.id,
+      email: data.user.email,
     };
 
     next();
-  } catch (error) {
-    console.error("Auth middleware error:", error.message);
-
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({
-        error: "Unauthorized",
-        message: "Token has expired",
-      });
-    }
-
-    if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({
-        error: "Unauthorized",
-        message: "Invalid token",
-      });
-    }
-
+  } catch (err) {
+    console.error("Auth middleware error:", err.message);
     return res.status(401).json({
       error: "Unauthorized",
       message: "Authentication failed",

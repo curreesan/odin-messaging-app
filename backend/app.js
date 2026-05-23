@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
+import profileRoutes from "./src/routes/profileRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -23,6 +25,8 @@ app.get("/", (req, res) => {
     status: "ok",
   });
 });
+
+app.use("/api/profiles", profileRoutes);
 
 // 404 handler
 app.use((req, res) => {
