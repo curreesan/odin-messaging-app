@@ -77,4 +77,45 @@ const getMyProfile = async (req, res) => {
   }
 };
 
-export { createProfile, getMyProfile };
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, bio, avatar_url } = req.body;
+
+    // ❌ prevent username change
+    if (req.body.username) {
+      return res.status(400).json({
+        error: "Username cannot be changed",
+      });
+    }
+
+    const existingProfile = await prisma.profile.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingProfile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    const updatedProfile = await prisma.profile.update({
+      where: { id: userId },
+      data: {
+        name: name ?? existingProfile.name,
+        bio: bio ?? existingProfile.bio,
+        avatar_url: avatar_url ?? existingProfile.avatar_url,
+      },
+    });
+
+    res.json({
+      message: "Profile updated successfully",
+      profile: updatedProfile,
+    });
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    res.status(500).json({
+      error: "Failed to update profile",
+    });
+  }
+};
+
+export { createProfile, getMyProfile, updateProfile };
