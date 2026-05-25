@@ -118,4 +118,43 @@ const updateProfile = async (req, res) => {
   }
 };
 
-export { createProfile, getMyProfile, updateProfile };
+const searchProfiles = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { username } = req.query;
+
+    if (!username) {
+      return res.status(400).json({
+        error: "Username query is required",
+      });
+    }
+
+    const profiles = await prisma.profile.findMany({
+      where: {
+        username: {
+          contains: username,
+          mode: "insensitive", // case-insensitive search
+        },
+        NOT: {
+          id: userId, // exclude current user
+        },
+      },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        avatar_url: true,
+      },
+      take: 10, // limit result
+    });
+
+    res.json({ profiles });
+  } catch (error) {
+    console.error("Search Profiles Error:", error);
+    res.status(500).json({
+      error: "Failed to search profiles",
+    });
+  }
+};
+
+export { createProfile, getMyProfile, updateProfile, searchProfiles };

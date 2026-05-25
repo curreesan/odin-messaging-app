@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import profileRoutes from "./src/routes/profileRoutes.js";
+import friendshipRoutes from "./src/routes/friendshipRoutes.js";
 
 dotenv.config();
 
@@ -26,7 +27,9 @@ app.get("/", (req, res) => {
   });
 });
 
+//Routes
 app.use("/api/profiles", profileRoutes);
+app.use("/api/friendships", friendshipRoutes);
 
 // 404 handler
 app.use((req, res) => {

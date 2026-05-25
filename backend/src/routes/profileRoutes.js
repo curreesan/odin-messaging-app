@@ -4,6 +4,7 @@ import {
   createProfile,
   getMyProfile,
   updateProfile,
+  searchProfiles,
 } from "../controllers/profileController.js";
 
 const router = express.Router();
@@ -16,5 +17,8 @@ router.get("/me", authMiddleware, getMyProfile);
 
 // PUT /api/profiles/me
 router.put("/me", authMiddleware, updateProfile);
+
+// GET /api/profiles/search
+router.get("/search", authMiddleware, searchProfiles);
 
 export default router;
