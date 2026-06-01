@@ -6,6 +6,8 @@ import { Server } from "socket.io";
 
 import profileRoutes from "./src/routes/profileRoutes.js";
 import friendshipRoutes from "./src/routes/friendshipRoutes.js";
+import conversationRoutes from "./src/routes/conversationRoutes.js";
+import messageRoutes from "./src/routes/messageRoutes.js";
 import initSocket from "./src/lib/socket.js";
 
 dotenv.config();
@@ -37,6 +39,8 @@ app.get("/", (req, res) => {
 
 app.use("/api/profiles", profileRoutes);
 app.use("/api/friendships", friendshipRoutes);
+app.use("/api/conversations", conversationRoutes);
+app.use("/api/messages", messageRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
