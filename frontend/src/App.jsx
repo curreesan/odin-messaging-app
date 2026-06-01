@@ -4,6 +4,7 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import MyProfile from "./pages/MyProfile";
 import Friends from "./pages/Friends";
+import Messages from "./pages/Message";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         {/* Protected Routes */}
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/friends" element={<Friends />} />
+        <Route path="/messages" element={<Messages />} />
 
         {/* Redirects */}
         <Route path="/" element={<Navigate to="/login" replace />} />
