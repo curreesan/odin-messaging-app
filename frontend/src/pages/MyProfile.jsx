@@ -1,38 +1,27 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function MyProfile() {
   const [profile, setProfile] = useState(null);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [isEditing, setIsEditing] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
     avatar_url: "",
   });
 
-  const navigate = useNavigate();
+  const { user, session } = useAuth();
 
   useEffect(() => {
+    if (!session) return;
+
     const fetchProfile = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          navigate("/login");
-          return;
-        }
-
-        setUser(session.user);
-
         const response = await fetch("http://localhost:3000/api/profiles/me", {
-          method: "GET",
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
@@ -46,7 +35,6 @@ export default function MyProfile() {
 
         setProfile(profileData);
 
-        // Populate form
         setFormData({
           name: profileData.name || "",
           bio: profileData.bio || "",
@@ -60,20 +48,19 @@ export default function MyProfile() {
     };
 
     fetchProfile();
-  }, [navigate]);
+  }, [session]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
       const response = await fetch("http://localhost:3000/api/profiles/me", {
         method: "PUT",
         headers: {
@@ -97,14 +84,16 @@ export default function MyProfile() {
   };
 
   if (loading) return <div>Loading profile...</div>;
-  if (error) return <div style={{ color: "red" }}>Error: {error}</div>;
+
+  if (error) {
+    return <div style={{ color: "red" }}>Error: {error}</div>;
+  }
 
   return (
     <div>
       <h1>My Profile</h1>
 
       {!isEditing ? (
-        // -------- VIEW MODE --------
         <div>
           {profile?.avatar_url ? (
             <img
@@ -151,7 +140,6 @@ export default function MyProfile() {
           <button onClick={() => setIsEditing(true)}>Edit Profile</button>
         </div>
       ) : (
-        // -------- EDIT MODE --------
         <form onSubmit={handleUpdate}>
           <div>
             <label>Name:</label>
@@ -185,20 +173,6 @@ export default function MyProfile() {
           </div>
         </form>
       )}
-
-      <div style={{ marginTop: "20px" }}>
-        <button onClick={() => navigate("/dashboard")}>Go to Dashboard</button>
-
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            navigate("/login");
-          }}
-          style={{ marginLeft: "10px" }}
-        >
-          Logout
-        </button>
-      </div>
     </div>
   );
 }

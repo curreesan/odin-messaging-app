@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 
 export default function Friends() {
-  const [session, setSession] = useState(null);
+  const { session } = useAuth();
 
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
@@ -12,22 +12,10 @@ export default function Friends() {
 
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      setSession(session);
-    };
-
-    getSession();
-  }, []);
-
   const handleSearch = async (e) => {
     e.preventDefault();
 
-    if (!search.trim()) return;
+    if (!search.trim() || !session) return;
 
     setLoading(true);
 
@@ -51,6 +39,8 @@ export default function Friends() {
   };
 
   const sendRequest = async (id) => {
+    if (!session) return;
+
     try {
       await fetch("http://localhost:3000/api/friendships", {
         method: "POST",
@@ -58,7 +48,9 @@ export default function Friends() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ receiver_id: id }),
+        body: JSON.stringify({
+          receiver_id: id,
+        }),
       });
 
       alert("Request sent");
@@ -68,6 +60,8 @@ export default function Friends() {
   };
 
   const loadRequests = async () => {
+    if (!session) return;
+
     const res = await fetch("http://localhost:3000/api/friendships/requests", {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -79,6 +73,8 @@ export default function Friends() {
   };
 
   const loadFriends = async () => {
+    if (!session) return;
+
     const res = await fetch("http://localhost:3000/api/friendships", {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -90,6 +86,8 @@ export default function Friends() {
   };
 
   const acceptRequest = async (id) => {
+    if (!session) return;
+
     await fetch(`http://localhost:3000/api/friendships/${id}/accept`, {
       method: "PUT",
       headers: {
@@ -102,6 +100,8 @@ export default function Friends() {
   };
 
   const rejectRequest = async (id) => {
+    if (!session) return;
+
     await fetch(`http://localhost:3000/api/friendships/${id}/reject`, {
       method: "DELETE",
       headers: {
@@ -113,17 +113,17 @@ export default function Friends() {
   };
 
   useEffect(() => {
-    if (session) {
-      loadRequests();
-      loadFriends();
-    }
+    if (!session) return;
+
+    loadRequests();
+    loadFriends();
   }, [session]);
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>Friends</h1>
 
-      {/* -------- SEARCH -------- */}
+      {/* SEARCH */}
       <form onSubmit={handleSearch}>
         <input
           type="text"
@@ -131,36 +131,44 @@ export default function Friends() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+
         <button type="submit">Search</button>
       </form>
 
       {loading && <p>Searching...</p>}
 
-      {/* -------- RESULTS -------- */}
+      {/* RESULTS */}
       <h2>Search Results</h2>
+
       {results.map((user) => (
         <div key={user.id}>
           <p>
-            {user.name || "No name"} (@{user.username})
+            {user.name || "No name"} (@
+            {user.username})
           </p>
+
           <button onClick={() => sendRequest(user.id)}>Add Friend</button>
         </div>
       ))}
 
-      {/* -------- REQUESTS -------- */}
+      {/* REQUESTS */}
       <h2>Incoming Requests</h2>
+
       {requests.map((req) => (
         <div key={req.id}>
           <p>
             {req.sender.name || "No name"} (@{req.sender.username})
           </p>
+
           <button onClick={() => acceptRequest(req.id)}>Accept</button>
+
           <button onClick={() => rejectRequest(req.id)}>Reject</button>
         </div>
       ))}
 
-      {/* -------- FRIENDS -------- */}
+      {/* FRIENDS */}
       <h2>Friends</h2>
+
       {friends.map((friend) => (
         <div key={friend.id}>
           <p>

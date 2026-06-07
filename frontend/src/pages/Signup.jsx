@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -12,19 +13,30 @@ export default function Signup() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
+  const { session } = useAuth();
+
+  useEffect(() => {
+    if (session) {
+      navigate("/messages");
+    }
+  }, [session, navigate]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
+
     setLoading(true);
     setError("");
 
     try {
-      // 1. Sign up with Supabase Auth
       const { data, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -32,7 +44,6 @@ export default function Signup() {
 
       if (authError) throw authError;
 
-      // 2. Create profile in our backend
       if (data.session) {
         const response = await fetch("http://localhost:3000/api/profiles", {
           method: "POST",
@@ -54,7 +65,7 @@ export default function Signup() {
       }
 
       alert("Account created successfully!");
-      navigate("/login");
+      navigate("/messages");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -77,6 +88,7 @@ export default function Signup() {
           onChange={handleChange}
           required
         />
+
         <input
           type="password"
           name="password"
@@ -85,6 +97,7 @@ export default function Signup() {
           onChange={handleChange}
           required
         />
+
         <input
           type="text"
           name="username"
@@ -93,6 +106,7 @@ export default function Signup() {
           onChange={handleChange}
           required
         />
+
         <input
           type="text"
           name="name"

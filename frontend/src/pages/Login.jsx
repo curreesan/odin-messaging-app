@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -10,14 +11,26 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
+  const { session } = useAuth();
+
+  useEffect(() => {
+    if (session) {
+      navigate("/messages");
+    }
+  }, [session, navigate]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     setLoading(true);
     setError("");
 
@@ -31,10 +44,9 @@ export default function Login() {
 
       if (authError) throw authError;
 
-      // If login successful, session available
       if (data.session) {
         console.log("Logged in successfully!", data.user);
-        navigate("/my-profile");
+        navigate("/messages");
       }
     } catch (err) {
       setError(err.message);
@@ -58,6 +70,7 @@ export default function Login() {
           onChange={handleChange}
           required
         />
+
         <input
           type="password"
           name="password"
