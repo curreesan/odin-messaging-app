@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
@@ -84,6 +84,10 @@ export default function Login() {
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
+
+      <p style={{ marginTop: "15px" }}>
+        Don't have an account? <Link to="/signup">Sign Up</Link>
+      </p>
     </div>
   );
 }
