@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
 
@@ -21,6 +21,20 @@ export default function Messages() {
     selectedConversationRef.current = conversation;
     setSelectedConversation(conversation);
   };
+
+  const fetchConversations = useCallback(async () => {
+    if (!session) return;
+    try {
+      const response = await fetch("http://localhost:3000/api/conversations", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!response.ok) throw new Error("Failed to load conversations");
+      const data = await response.json();
+      setConversations(data.conversations || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [session]);
 
   useEffect(() => {
     if (!session) return;
@@ -52,22 +66,26 @@ export default function Messages() {
           console.error(error);
         });
 
-        const response = await fetch(
-          "http://localhost:3000/api/conversations",
-          {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
+        socketRef.current.on(
+          "conversation_updated",
+          ({ conversationId, lastMessage }) => {
+            setConversations((prev) => {
+              const exists = prev.some((c) => c.id === conversationId);
+
+              if (exists) {
+                return prev.map((c) =>
+                  c.id === conversationId ? { ...c, lastMessage } : c,
+                );
+              } else {
+                // new conversation appeared — refetch
+                fetchConversations();
+                return prev;
+              }
+            });
           },
         );
 
-        if (!response.ok) {
-          throw new Error("Failed to load conversations");
-        }
-
-        const data = await response.json();
-
-        setConversations(data.conversations || []);
+        await fetchConversations();
       } catch (err) {
         console.error(err);
         setError(err.message);
@@ -81,7 +99,7 @@ export default function Messages() {
     return () => {
       socketRef.current?.disconnect();
     };
-  }, [session]);
+  }, [session, fetchConversations]);
 
   const loadConversation = async (conversation) => {
     if (!session) return;
@@ -92,18 +110,13 @@ export default function Messages() {
       const response = await fetch(
         `http://localhost:3000/api/messages/${conversation.id}`,
         {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
+          headers: { Authorization: `Bearer ${session.access_token}` },
         },
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to load messages");
-      }
+      if (!response.ok) throw new Error("Failed to load messages");
 
       const data = await response.json();
-
       setMessages(data.messages || []);
     } catch (err) {
       console.error(err);
@@ -112,9 +125,7 @@ export default function Messages() {
   };
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !selectedConversation) {
-      return;
-    }
+    if (!messageInput.trim() || !selectedConversation) return;
 
     socketRef.current.emit("send_message", {
       conversationId: selectedConversation.id,
@@ -129,17 +140,12 @@ export default function Messages() {
 
     try {
       const response = await fetch("http://localhost:3000/api/friendships", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to load friends");
-      }
+      if (!response.ok) throw new Error("Failed to load friends");
 
       const data = await response.json();
-
       setFriends(data.friends || []);
       setShowFriendsModal(true);
     } catch (err) {
@@ -158,61 +164,37 @@ export default function Messages() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          friendId: friend.id,
-        }),
+        body: JSON.stringify({ friendId: friend.id }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create conversation");
-      }
+      if (!response.ok) throw new Error("Failed to create conversation");
 
       const data = await response.json();
-
       const conversation = data.conversation;
 
       setConversations((prev) => {
         const exists = prev.some((c) => c.id === conversation.id);
-
         if (exists) return prev;
-
         return [
-          {
-            ...conversation,
-            otherUser: friend,
-            lastMessage: null,
-          },
+          { ...conversation, otherUser: friend, lastMessage: null },
           ...prev,
         ];
       });
 
       setShowFriendsModal(false);
 
-      await loadConversation({
-        ...conversation,
-        otherUser: friend,
-      });
+      await loadConversation({ ...conversation, otherUser: friend });
     } catch (err) {
       console.error(err);
       setError(err.message);
     }
   };
 
-  if (loading) {
-    return <h2>Loading...</h2>;
-  }
-
-  if (error) {
-    return <h2 style={{ color: "red" }}>{error}</h2>;
-  }
+  if (loading) return <h2>Loading...</h2>;
+  if (error) return <h2 style={{ color: "red" }}>{error}</h2>;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-      }}
-    >
+    <div style={{ display: "flex", height: "100vh" }}>
       {/* LEFT PANEL */}
       <div
         style={{
@@ -240,58 +222,30 @@ export default function Messages() {
             <h4>
               {conversation.otherUser?.name || conversation.otherUser?.username}
             </h4>
-
             <p>{conversation.lastMessage?.content || "No messages yet"}</p>
           </div>
         ))}
       </div>
 
       {/* RIGHT PANEL */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {!selectedConversation ? (
-          <div
-            style={{
-              padding: "20px",
-            }}
-          >
+          <div style={{ padding: "20px" }}>
             <h2>Select a conversation</h2>
           </div>
         ) : (
           <>
-            <div
-              style={{
-                padding: "15px",
-                borderBottom: "1px solid #ccc",
-              }}
-            >
+            <div style={{ padding: "15px", borderBottom: "1px solid #ccc" }}>
               <h2>
                 {selectedConversation.otherUser?.name ||
                   selectedConversation.otherUser?.username}
               </h2>
             </div>
 
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: "20px",
-              }}
-            >
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
               {messages.map((message) => (
-                <div
-                  key={message.id}
-                  style={{
-                    marginBottom: "15px",
-                  }}
-                >
+                <div key={message.id} style={{ marginBottom: "15px" }}>
                   <strong>{message.sender.username}</strong>
-
                   <p>{message.content}</p>
                 </div>
               ))}
@@ -310,18 +264,9 @@ export default function Messages() {
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 placeholder="Type a message..."
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                }}
+                style={{ flex: 1, padding: "10px" }}
               />
-
-              <button
-                onClick={sendMessage}
-                style={{
-                  marginLeft: "10px",
-                }}
-              >
+              <button onClick={sendMessage} style={{ marginLeft: "10px" }}>
                 Send
               </button>
             </div>
@@ -360,7 +305,6 @@ export default function Messages() {
                 }}
               >
                 <strong>{friend.name || friend.username}</strong>
-
                 <p>@{friend.username}</p>
               </div>
             ))
@@ -368,9 +312,7 @@ export default function Messages() {
 
           <button
             onClick={() => setShowFriendsModal(false)}
-            style={{
-              marginTop: "10px",
-            }}
+            style={{ marginTop: "10px" }}
           >
             Close
           </button>

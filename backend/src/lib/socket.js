@@ -30,15 +30,9 @@ export default function initSocket(io) {
 
     socket.on("send_message", async ({ conversationId, content }) => {
       try {
-        if (!socket.userId) {
-          return;
-        }
+        if (!socket.userId) return;
+        if (!content?.trim()) return;
 
-        if (!content?.trim()) {
-          return;
-        }
-
-        // Verify sender belongs to conversation
         const participant = await prisma.conversationParticipant.findFirst({
           where: {
             conversation_id: conversationId,
@@ -46,11 +40,8 @@ export default function initSocket(io) {
           },
         });
 
-        if (!participant) {
-          return;
-        }
+        if (!participant) return;
 
-        // Save message
         const message = await prisma.message.create({
           data: {
             conversation_id: conversationId,
@@ -69,37 +60,34 @@ export default function initSocket(io) {
           },
         });
 
-        // Find other participant
         const participants = await prisma.conversationParticipant.findMany({
-          where: {
-            conversation_id: conversationId,
-          },
+          where: { conversation_id: conversationId },
         });
 
-        const recipient = participants.find(
-          (participant) => participant.user_id !== socket.userId,
-        );
+        const recipient = participants.find((p) => p.user_id !== socket.userId);
 
-        if (!recipient) {
-          return;
-        }
+        if (!recipient) return;
 
-        // Check if recipient is online
         const recipientSocketId = onlineUsers.get(recipient.user_id);
 
-        // Deliver instantly
+        // Emit to recipient
         if (recipientSocketId) {
           io.to(recipientSocketId).emit("receive_message", message);
+          io.to(recipientSocketId).emit("conversation_updated", {
+            conversationId,
+            lastMessage: message,
+          });
         }
 
         // Acknowledge sender
         socket.emit("message_sent", message);
+        socket.emit("conversation_updated", {
+          conversationId,
+          lastMessage: message,
+        });
       } catch (error) {
         console.error("Send Message Socket Error:", error);
-
-        socket.emit("message_error", {
-          error: "Failed to send message",
-        });
+        socket.emit("message_error", { error: "Failed to send message" });
       }
     });
 
