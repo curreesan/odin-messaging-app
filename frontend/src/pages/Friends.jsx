@@ -1,34 +1,26 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import "../styles/Friends.css";
 
 export default function Friends() {
   const { session } = useAuth();
 
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
-
   const [requests, setRequests] = useState([]);
   const [friends, setFriends] = useState([]);
-
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async (e) => {
     e.preventDefault();
-
     if (!search.trim() || !session) return;
-
     setLoading(true);
 
     try {
       const res = await fetch(
         `http://localhost:3000/api/profiles/search?username=${search}`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        },
+        { headers: { Authorization: `Bearer ${session.access_token}` } },
       );
-
       const data = await res.json();
       setResults(data.profiles || []);
     } catch (err) {
@@ -40,7 +32,6 @@ export default function Friends() {
 
   const sendRequest = async (id) => {
     if (!session) return;
-
     try {
       await fetch("http://localhost:3000/api/friendships", {
         method: "POST",
@@ -48,11 +39,8 @@ export default function Friends() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          receiver_id: id,
-        }),
+        body: JSON.stringify({ receiver_id: id }),
       });
-
       alert("Request sent");
     } catch (err) {
       console.error(err);
@@ -61,121 +49,157 @@ export default function Friends() {
 
   const loadRequests = async () => {
     if (!session) return;
-
     const res = await fetch("http://localhost:3000/api/friendships/requests", {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+      headers: { Authorization: `Bearer ${session.access_token}` },
     });
-
     const data = await res.json();
     setRequests(data.requests || []);
   };
 
   const loadFriends = async () => {
     if (!session) return;
-
     const res = await fetch("http://localhost:3000/api/friendships", {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+      headers: { Authorization: `Bearer ${session.access_token}` },
     });
-
     const data = await res.json();
     setFriends(data.friends || []);
   };
 
   const acceptRequest = async (id) => {
     if (!session) return;
-
     await fetch(`http://localhost:3000/api/friendships/${id}/accept`, {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+      headers: { Authorization: `Bearer ${session.access_token}` },
     });
-
     loadRequests();
     loadFriends();
   };
 
   const rejectRequest = async (id) => {
     if (!session) return;
-
     await fetch(`http://localhost:3000/api/friendships/${id}/reject`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
+      headers: { Authorization: `Bearer ${session.access_token}` },
     });
-
     loadRequests();
   };
 
   useEffect(() => {
     if (!session) return;
-
     loadRequests();
     loadFriends();
   }, [session]);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Friends</h1>
-
+    <div className="friends-page">
       {/* SEARCH */}
-      <form onSubmit={handleSearch}>
-        <input
-          type="text"
-          placeholder="Search username..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <section className="friends-section">
+        <h2 className="friends-section-title">Find People</h2>
+        <form className="friends-search-form" onSubmit={handleSearch}>
+          <input
+            className="friends-search-input"
+            type="text"
+            placeholder="Search by username..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button className="friends-search-button" type="submit">
+            Search
+          </button>
+        </form>
 
-        <button type="submit">Search</button>
-      </form>
+        {loading && <p className="friends-loading">Searching...</p>}
 
-      {loading && <p>Searching...</p>}
+        {results.length > 0 && (
+          <div className="friends-list">
+            {results.map((user) => (
+              <div className="friends-card" key={user.id}>
+                <div className="friends-card-info">
+                  <span className="friends-card-name">
+                    {user.name || "No name"}
+                  </span>
+                  <span className="friends-card-username">
+                    @{user.username}
+                  </span>
+                </div>
+                <button
+                  className="friends-button-primary"
+                  onClick={() => sendRequest(user.id)}
+                >
+                  Add Friend
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-      {/* RESULTS */}
-      <h2>Search Results</h2>
+      {/* INCOMING REQUESTS */}
+      <section className="friends-section">
+        <h2 className="friends-section-title">
+          Incoming Requests
+          {requests.length > 0 && (
+            <span className="friends-badge">{requests.length}</span>
+          )}
+        </h2>
 
-      {results.map((user) => (
-        <div key={user.id}>
-          <p>
-            {user.name || "No name"} (@
-            {user.username})
-          </p>
+        {requests.length === 0 ? (
+          <p className="friends-empty">No pending requests</p>
+        ) : (
+          <div className="friends-list">
+            {requests.map((req) => (
+              <div className="friends-card" key={req.id}>
+                <div className="friends-card-info">
+                  <span className="friends-card-name">
+                    {req.sender.name || "No name"}
+                  </span>
+                  <span className="friends-card-username">
+                    @{req.sender.username}
+                  </span>
+                </div>
+                <div className="friends-card-actions">
+                  <button
+                    className="friends-button-primary"
+                    onClick={() => acceptRequest(req.id)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    className="friends-button-secondary"
+                    onClick={() => rejectRequest(req.id)}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-          <button onClick={() => sendRequest(user.id)}>Add Friend</button>
-        </div>
-      ))}
+      {/* FRIENDS LIST */}
+      <section className="friends-section">
+        <h2 className="friends-section-title">Friends</h2>
 
-      {/* REQUESTS */}
-      <h2>Incoming Requests</h2>
-
-      {requests.map((req) => (
-        <div key={req.id}>
-          <p>
-            {req.sender.name || "No name"} (@{req.sender.username})
-          </p>
-
-          <button onClick={() => acceptRequest(req.id)}>Accept</button>
-
-          <button onClick={() => rejectRequest(req.id)}>Reject</button>
-        </div>
-      ))}
-
-      {/* FRIENDS */}
-      <h2>Friends</h2>
-
-      {friends.map((friend) => (
-        <div key={friend.id}>
-          <p>
-            {friend.name || "No name"} (@{friend.username})
-          </p>
-        </div>
-      ))}
+        {friends.length === 0 ? (
+          <p className="friends-empty">No friends yet</p>
+        ) : (
+          <div className="friends-list">
+            {friends.map((friend) => (
+              <div className="friends-card" key={friend.id}>
+                <div className="friends-card-info">
+                  <span className="friends-card-name">
+                    {friend.name || "No name"}
+                  </span>
+                  <span className="friends-card-username">
+                    @{friend.username}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

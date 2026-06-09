@@ -1,0 +1,146 @@
+.friends-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.friends-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.friends-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.friends-badge {
+  background-color: #111;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+.friends-search-form {
+  display: flex;
+  gap: 8px;
+}
+
+.friends-search-input {
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.friends-search-input:focus {
+  border-color: #999;
+}
+
+.friends-search-button {
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  background-color: #111;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.friends-search-button:hover {
+  background-color: #333;
+}
+
+.friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.friends-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background-color: #fff;
+}
+
+.friends-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.friends-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111;
+}
+
+.friends-card-username {
+  font-size: 12px;
+  color: #888;
+}
+
+.friends-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.friends-button-primary {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #111;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.friends-button-primary:hover {
+  background-color: #333;
+}
+
+.friends-button-secondary {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #f0f0f0;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.friends-button-secondary:hover {
+  background-color: #e0e0e0;
+}
+
+.friends-empty {
+  font-size: 13px;
+  color: #999;
+}
+
+.friends-loading {
+  font-size: 13px;
+  color: #666;
+}

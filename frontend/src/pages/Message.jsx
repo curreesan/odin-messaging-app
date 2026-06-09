@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
+import "../styles/Messages.css";
 
 export default function Messages() {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
 
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -42,7 +43,6 @@ export default function Messages() {
     const initialize = async () => {
       try {
         socketRef.current = io("http://localhost:3000");
-
         socketRef.current.emit("authenticate", session.access_token);
 
         socketRef.current.on("authenticated", () => {
@@ -71,13 +71,11 @@ export default function Messages() {
           ({ conversationId, lastMessage }) => {
             setConversations((prev) => {
               const exists = prev.some((c) => c.id === conversationId);
-
               if (exists) {
                 return prev.map((c) =>
                   c.id === conversationId ? { ...c, lastMessage } : c,
                 );
               } else {
-                // new conversation appeared — refetch
                 fetchConversations();
                 return prev;
               }
@@ -103,19 +101,13 @@ export default function Messages() {
 
   const loadConversation = async (conversation) => {
     if (!session) return;
-
     try {
       handleSelectConversation(conversation);
-
       const response = await fetch(
         `http://localhost:3000/api/messages/${conversation.id}`,
-        {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        },
+        { headers: { Authorization: `Bearer ${session.access_token}` } },
       );
-
       if (!response.ok) throw new Error("Failed to load messages");
-
       const data = await response.json();
       setMessages(data.messages || []);
     } catch (err) {
@@ -126,25 +118,20 @@ export default function Messages() {
 
   const sendMessage = () => {
     if (!messageInput.trim() || !selectedConversation) return;
-
     socketRef.current.emit("send_message", {
       conversationId: selectedConversation.id,
       content: messageInput,
     });
-
     setMessageInput("");
   };
 
   const openFriendsModal = async () => {
     if (!session) return;
-
     try {
       const response = await fetch("http://localhost:3000/api/friendships", {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-
       if (!response.ok) throw new Error("Failed to load friends");
-
       const data = await response.json();
       setFriends(data.friends || []);
       setShowFriendsModal(true);
@@ -156,7 +143,6 @@ export default function Messages() {
 
   const startConversation = async (friend) => {
     if (!session) return;
-
     try {
       const response = await fetch("http://localhost:3000/api/conversations", {
         method: "POST",
@@ -166,9 +152,7 @@ export default function Messages() {
         },
         body: JSON.stringify({ friendId: friend.id }),
       });
-
       if (!response.ok) throw new Error("Failed to create conversation");
-
       const data = await response.json();
       const conversation = data.conversation;
 
@@ -182,7 +166,6 @@ export default function Messages() {
       });
 
       setShowFriendsModal(false);
-
       await loadConversation({ ...conversation, otherUser: friend });
     } catch (err) {
       console.error(err);
@@ -190,83 +173,90 @@ export default function Messages() {
     }
   };
 
-  if (loading) return <h2>Loading...</h2>;
-  if (error) return <h2 style={{ color: "red" }}>{error}</h2>;
+  if (loading) return <div className="messages-loading">Loading...</div>;
+  if (error) return <div className="messages-error">{error}</div>;
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div className="messages-page">
       {/* LEFT PANEL */}
-      <div
-        style={{
-          width: "300px",
-          borderRight: "1px solid #ccc",
-          overflowY: "auto",
-        }}
-      >
-        <div style={{ padding: "10px" }}>
-          <button onClick={openFriendsModal}>New Conversation</button>
+      <div className="messages-sidebar">
+        <div className="messages-sidebar-header">
+          <h2 className="messages-sidebar-title">Messages</h2>
+          <button className="messages-new-button" onClick={openFriendsModal}>
+            + New
+          </button>
         </div>
 
-        <h2>Conversations</h2>
-
-        {conversations.map((conversation) => (
-          <div
-            key={conversation.id}
-            onClick={() => loadConversation(conversation)}
-            style={{
-              padding: "12px",
-              borderBottom: "1px solid #eee",
-              cursor: "pointer",
-            }}
-          >
-            <h4>
-              {conversation.otherUser?.name || conversation.otherUser?.username}
-            </h4>
-            <p>{conversation.lastMessage?.content || "No messages yet"}</p>
-          </div>
-        ))}
+        <div className="messages-conversation-list">
+          {conversations.length === 0 ? (
+            <p className="messages-empty">No conversations yet</p>
+          ) : (
+            conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                className={`messages-conversation-item ${
+                  selectedConversation?.id === conversation.id
+                    ? "messages-conversation-item--active"
+                    : ""
+                }`}
+                onClick={() => loadConversation(conversation)}
+              >
+                <span className="messages-conversation-name">
+                  {conversation.otherUser?.name ||
+                    conversation.otherUser?.username}
+                </span>
+                <span className="messages-conversation-preview">
+                  {conversation.lastMessage?.content || "No messages yet"}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* RIGHT PANEL */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div className="messages-chat">
         {!selectedConversation ? (
-          <div style={{ padding: "20px" }}>
-            <h2>Select a conversation</h2>
+          <div className="messages-chat-empty">
+            <p>Select a conversation to start messaging</p>
           </div>
         ) : (
           <>
-            <div style={{ padding: "15px", borderBottom: "1px solid #ccc" }}>
-              <h2>
+            <div className="messages-chat-header">
+              <h2 className="messages-chat-name">
                 {selectedConversation.otherUser?.name ||
                   selectedConversation.otherUser?.username}
               </h2>
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
+            <div className="messages-chat-body">
               {messages.map((message) => (
-                <div key={message.id} style={{ marginBottom: "15px" }}>
-                  <strong>{message.sender.username}</strong>
-                  <p>{message.content}</p>
+                <div
+                  key={message.id}
+                  className={`messages-bubble-wrapper ${
+                    message.sender.id === user?.id
+                      ? "messages-bubble-wrapper--self"
+                      : ""
+                  }`}
+                >
+                  <span className="messages-bubble-sender">
+                    {message.sender.username}
+                  </span>
+                  <div className="messages-bubble">{message.content}</div>
                 </div>
               ))}
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                padding: "10px",
-                borderTop: "1px solid #ccc",
-              }}
-            >
+            <div className="messages-chat-input">
               <input
+                className="messages-input"
                 type="text"
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 placeholder="Type a message..."
-                style={{ flex: 1, padding: "10px" }}
               />
-              <button onClick={sendMessage} style={{ marginLeft: "10px" }}>
+              <button className="messages-send-button" onClick={sendMessage}>
                 Send
               </button>
             </div>
@@ -277,45 +267,40 @@ export default function Messages() {
       {/* FRIENDS MODAL */}
       {showFriendsModal && (
         <div
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            background: "white",
-            padding: "20px",
-            border: "1px solid #ccc",
-            zIndex: 1000,
-            minWidth: "300px",
-          }}
+          className="messages-modal-overlay"
+          onClick={() => setShowFriendsModal(false)}
         >
-          <h3>Select Friend</h3>
+          <div className="messages-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="messages-modal-title">Start a Conversation</h3>
 
-          {friends.length === 0 ? (
-            <p>No friends found</p>
-          ) : (
-            friends.map((friend) => (
-              <div
-                key={friend.id}
-                onClick={() => startConversation(friend)}
-                style={{
-                  padding: "10px",
-                  borderBottom: "1px solid #eee",
-                  cursor: "pointer",
-                }}
-              >
-                <strong>{friend.name || friend.username}</strong>
-                <p>@{friend.username}</p>
+            {friends.length === 0 ? (
+              <p className="messages-empty">No friends found</p>
+            ) : (
+              <div className="messages-modal-list">
+                {friends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    className="messages-modal-item"
+                    onClick={() => startConversation(friend)}
+                  >
+                    <span className="messages-modal-name">
+                      {friend.name || friend.username}
+                    </span>
+                    <span className="messages-modal-username">
+                      @{friend.username}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))
-          )}
+            )}
 
-          <button
-            onClick={() => setShowFriendsModal(false)}
-            style={{ marginTop: "10px" }}
-          >
-            Close
-          </button>
+            <button
+              className="messages-modal-close"
+              onClick={() => setShowFriendsModal(false)}
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>

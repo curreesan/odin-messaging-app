@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import "../styles/Auth.css";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -18,21 +19,15 @@ export default function Signup() {
   const { session } = useAuth();
 
   useEffect(() => {
-    if (session) {
-      navigate("/messages");
-    }
+    if (session) navigate("/messages");
   }, [session, navigate]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     setError("");
 
@@ -58,7 +53,6 @@ export default function Signup() {
         });
 
         const profileData = await response.json();
-
         if (!response.ok) {
           throw new Error(profileData.error || "Failed to create profile");
         }
@@ -74,55 +68,57 @@ export default function Signup() {
   };
 
   return (
-    <div>
-      <h1>Sign Up</h1>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-title">Sign Up</h1>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p className="auth-error">{error}</p>}
 
-      <form onSubmit={handleSignup}>
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
+        <form className="auth-form" onSubmit={handleSignup}>
+          <input
+            className="auth-input"
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            className="auth-input"
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <input
+            className="auth-input"
+            type="text"
+            name="username"
+            placeholder="Username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+          <input
+            className="auth-input"
+            type="text"
+            name="name"
+            placeholder="Full Name (optional)"
+            value={formData.name}
+            onChange={handleChange}
+          />
+          <button className="auth-button" type="submit" disabled={loading}>
+            {loading ? "Creating Account..." : "Sign Up"}
+          </button>
+        </form>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-
-        <input
-          type="text"
-          name="username"
-          placeholder="Username"
-          value={formData.username}
-          onChange={handleChange}
-          required
-        />
-
-        <input
-          type="text"
-          name="name"
-          placeholder="Full Name (optional)"
-          value={formData.name}
-          onChange={handleChange}
-        />
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Creating Account..." : "Sign Up"}
-        </button>
-      </form>
-
-      <p style={{ marginTop: "15px" }}>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
+        <p className="auth-footer">
+          Already have an account? <Link to="/login">Login</Link>
+        </p>
+      </div>
     </div>
   );
 }

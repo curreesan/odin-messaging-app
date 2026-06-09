@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import "../styles/MyProfile.css";
 
 export default function MyProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [isEditing, setIsEditing] = useState(false);
-
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
@@ -22,19 +21,14 @@ export default function MyProfile() {
     const fetchProfile = async () => {
       try {
         const response = await fetch("http://localhost:3000/api/profiles/me", {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
+          headers: { Authorization: `Bearer ${session.access_token}` },
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to load profile");
-        }
+        if (!response.ok) throw new Error("Failed to load profile");
 
         const { profile: profileData } = await response.json();
 
         setProfile(profileData);
-
         setFormData({
           name: profileData.name || "",
           bio: profileData.bio || "",
@@ -51,10 +45,7 @@ export default function MyProfile() {
   }, [session]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleUpdate = async (e) => {
@@ -71,10 +62,7 @@ export default function MyProfile() {
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Update failed");
-      }
+      if (!response.ok) throw new Error(data.error || "Update failed");
 
       setProfile(data.profile);
       setIsEditing(false);
@@ -83,96 +71,91 @@ export default function MyProfile() {
     }
   };
 
-  if (loading) return <div>Loading profile...</div>;
-
-  if (error) {
-    return <div style={{ color: "red" }}>Error: {error}</div>;
-  }
+  if (loading) return <div className="profile-loading">Loading profile...</div>;
+  if (error) return <div className="profile-error">Error: {error}</div>;
 
   return (
-    <div>
-      <h1>My Profile</h1>
+    <div className="profile-page">
+      <div className="profile-card">
+        <h1 className="profile-title">My Profile</h1>
 
-      {!isEditing ? (
-        <div>
-          {profile?.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt="Profile"
-              width="150"
-              style={{ borderRadius: "50%" }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "150px",
-                height: "150px",
-                background: "#ddd",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              No Image
+        {!isEditing ? (
+          <div className="profile-view">
+            <div className="profile-avatar-wrapper">
+              {profile?.avatar_url ? (
+                <img
+                  className="profile-avatar"
+                  src={profile.avatar_url}
+                  alt="Profile"
+                />
+              ) : (
+                <div className="profile-avatar-placeholder">No Image</div>
+              )}
             </div>
-          )}
 
-          <h2>{profile?.name || "No Name"}</h2>
-
-          <p>
-            <strong>Username:</strong> @{profile?.username}
-          </p>
-
-          <p>
-            <strong>Email:</strong> {user?.email}
-          </p>
-
-          {profile?.bio ? (
-            <div>
-              <strong>Bio:</strong>
-              <p>{profile.bio}</p>
+            <div className="profile-info">
+              <h2 className="profile-name">{profile?.name || "No Name"}</h2>
+              <p className="profile-username">@{profile?.username}</p>
+              <p className="profile-email">{user?.email}</p>
+              <p className="profile-bio">
+                {profile?.bio || "No bio added yet."}
+              </p>
             </div>
-          ) : (
-            <p>No bio added yet.</p>
-          )}
-
-          <button onClick={() => setIsEditing(true)}>Edit Profile</button>
-        </div>
-      ) : (
-        <form onSubmit={handleUpdate}>
-          <div>
-            <label>Name:</label>
-            <input name="name" value={formData.name} onChange={handleChange} />
-          </div>
-
-          <div>
-            <label>Bio:</label>
-            <textarea name="bio" value={formData.bio} onChange={handleChange} />
-          </div>
-
-          <div>
-            <label>Avatar URL:</label>
-            <input
-              name="avatar_url"
-              value={formData.avatar_url}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div style={{ marginTop: "10px" }}>
-            <button type="submit">Save</button>
 
             <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              style={{ marginLeft: "10px" }}
+              className="profile-button"
+              onClick={() => setIsEditing(true)}
             >
-              Cancel
+              Edit Profile
             </button>
           </div>
-        </form>
-      )}
+        ) : (
+          <form className="profile-form" onSubmit={handleUpdate}>
+            <div className="profile-form-group">
+              <label className="profile-label">Name</label>
+              <input
+                className="profile-input"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="profile-form-group">
+              <label className="profile-label">Bio</label>
+              <textarea
+                className="profile-textarea"
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="profile-form-group">
+              <label className="profile-label">Avatar URL</label>
+              <input
+                className="profile-input"
+                name="avatar_url"
+                value={formData.avatar_url}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="profile-form-actions">
+              <button className="profile-button" type="submit">
+                Save
+              </button>
+              <button
+                className="profile-button-secondary"
+                type="button"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

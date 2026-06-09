@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import "../styles/Navbar.css";
 
 export default function Navbar() {
   const { session, user } = useAuth();
@@ -18,38 +19,17 @@ export default function Navbar() {
   if (!session) return null;
 
   return (
-    <nav
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "15px 20px",
-        borderBottom: "1px solid #ccc",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-        }}
-      >
+    <nav className="navbar">
+      <div className="navbar-links">
         <Link to="/messages">Messages</Link>
-
         <Link to="/friends">Friends</Link>
-
         <Link to="/my-profile">My Profile</Link>
       </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "15px",
-        }}
-      >
-        <span>{user?.email}</span>
-
-        <button onClick={handleLogout}>Logout</button>
+      <div className="navbar-user">
+        <span className="navbar-email">{user?.email}</span>
+        <button className="navbar-logout" onClick={handleLogout}>
+          Logout
+        </button>
       </div>
     </nav>
   );
