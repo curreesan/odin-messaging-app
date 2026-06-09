@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 import "../styles/MyProfile.css";
 
 export default function MyProfile() {
@@ -7,6 +8,7 @@ export default function MyProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
@@ -46,6 +48,33 @@ export default function MyProfile() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}.${fileExt}`;
+
+      const { error } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (error) throw error;
+
+      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      setFormData((prev) => ({ ...prev, avatar_url: data.publicUrl }));
+    } catch (err) {
+      alert("Failed to upload avatar");
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleUpdate = async (e) => {
@@ -132,17 +161,30 @@ export default function MyProfile() {
             </div>
 
             <div className="profile-form-group">
-              <label className="profile-label">Avatar URL</label>
+              <label className="profile-label">Avatar</label>
               <input
-                className="profile-input"
-                name="avatar_url"
-                value={formData.avatar_url}
-                onChange={handleChange}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                disabled={uploading}
               />
+              {uploading && <p className="profile-uploading">Uploading...</p>}
+              {formData.avatar_url && (
+                <img
+                  src={formData.avatar_url}
+                  alt="Preview"
+                  className="profile-avatar"
+                  style={{ marginTop: "8px" }}
+                />
+              )}
             </div>
 
             <div className="profile-form-actions">
-              <button className="profile-button" type="submit">
+              <button
+                className="profile-button"
+                type="submit"
+                disabled={uploading}
+              >
                 Save
               </button>
               <button

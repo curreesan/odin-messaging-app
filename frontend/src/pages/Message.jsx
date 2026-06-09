@@ -201,13 +201,28 @@ export default function Messages() {
                 }`}
                 onClick={() => loadConversation(conversation)}
               >
-                <span className="messages-conversation-name">
-                  {conversation.otherUser?.name ||
-                    conversation.otherUser?.username}
-                </span>
-                <span className="messages-conversation-preview">
-                  {conversation.lastMessage?.content || "No messages yet"}
-                </span>
+                <div className="messages-conversation-avatar-wrapper">
+                  {conversation.otherUser?.avatar_url ? (
+                    <img
+                      className="messages-conversation-avatar"
+                      src={conversation.otherUser.avatar_url}
+                      alt="avatar"
+                    />
+                  ) : (
+                    <div className="messages-conversation-avatar-placeholder">
+                      {conversation.otherUser?.username?.[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="messages-conversation-details">
+                  <span className="messages-conversation-name">
+                    {conversation.otherUser?.name ||
+                      conversation.otherUser?.username}
+                  </span>
+                  <span className="messages-conversation-preview">
+                    {conversation.lastMessage?.content || "No messages yet"}
+                  </span>
+                </div>
               </div>
             ))
           )}
