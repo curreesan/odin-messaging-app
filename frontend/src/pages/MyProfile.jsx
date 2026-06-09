@@ -3,6 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import "../styles/MyProfile.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function MyProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ export default function MyProfile() {
 
     const fetchProfile = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/profiles/me", {
+        const response = await fetch(`${API_URL}/api/profiles/me`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
 
@@ -81,7 +83,7 @@ export default function MyProfile() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/api/profiles/me", {
+      const response = await fetch(`${API_URL}/api/profiles/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

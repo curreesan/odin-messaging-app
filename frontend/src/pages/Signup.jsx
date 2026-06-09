@@ -4,6 +4,8 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Auth.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Signup() {
   const [formData, setFormData] = useState({
     email: "",
@@ -40,7 +42,7 @@ export default function Signup() {
       if (authError) throw authError;
 
       if (data.session) {
-        const response = await fetch("http://localhost:3000/api/profiles", {
+        const response = await fetch(`${API_URL}/api/profiles`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

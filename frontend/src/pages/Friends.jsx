@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Friends.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Friends() {
   const { session } = useAuth();
 
@@ -18,7 +20,7 @@ export default function Friends() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/api/profiles/search?username=${search}`,
+        `${API_URL}/api/profiles/search?username=${search}`,
         { headers: { Authorization: `Bearer ${session.access_token}` } },
       );
       const data = await res.json();
@@ -33,7 +35,7 @@ export default function Friends() {
   const sendRequest = async (id) => {
     if (!session) return;
     try {
-      await fetch("http://localhost:3000/api/friendships", {
+      await fetch(`${API_URL}/api/friendships`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,7 +51,7 @@ export default function Friends() {
 
   const loadRequests = async () => {
     if (!session) return;
-    const res = await fetch("http://localhost:3000/api/friendships/requests", {
+    const res = await fetch(`${API_URL}/api/friendships/requests`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
     const data = await res.json();
@@ -58,7 +60,7 @@ export default function Friends() {
 
   const loadFriends = async () => {
     if (!session) return;
-    const res = await fetch("http://localhost:3000/api/friendships", {
+    const res = await fetch(`${API_URL}/api/friendships`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
     const data = await res.json();
@@ -67,7 +69,7 @@ export default function Friends() {
 
   const acceptRequest = async (id) => {
     if (!session) return;
-    await fetch(`http://localhost:3000/api/friendships/${id}/accept`, {
+    await fetch(`${API_URL}/api/friendships/${id}/accept`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
@@ -77,7 +79,7 @@ export default function Friends() {
 
   const rejectRequest = async (id) => {
     if (!session) return;
-    await fetch(`http://localhost:3000/api/friendships/${id}/reject`, {
+    await fetch(`${API_URL}/api/friendships/${id}/reject`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${session.access_token}` },
     });

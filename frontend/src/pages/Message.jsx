@@ -3,6 +3,8 @@ import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Messages.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Messages() {
   const { session, user } = useAuth();
 
@@ -26,7 +28,7 @@ export default function Messages() {
   const fetchConversations = useCallback(async () => {
     if (!session) return;
     try {
-      const response = await fetch("http://localhost:3000/api/conversations", {
+      const response = await fetch(`${API_URL}/api/conversations`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (!response.ok) throw new Error("Failed to load conversations");
@@ -42,7 +44,7 @@ export default function Messages() {
 
     const initialize = async () => {
       try {
-        socketRef.current = io("http://localhost:3000");
+        socketRef.current = io(`${API_URL}`);
         socketRef.current.emit("authenticate", session.access_token);
 
         socketRef.current.on("authenticated", () => {
@@ -104,7 +106,7 @@ export default function Messages() {
     try {
       handleSelectConversation(conversation);
       const response = await fetch(
-        `http://localhost:3000/api/messages/${conversation.id}`,
+        `${API_URL}/api/messages/${conversation.id}`,
         { headers: { Authorization: `Bearer ${session.access_token}` } },
       );
       if (!response.ok) throw new Error("Failed to load messages");
@@ -128,7 +130,7 @@ export default function Messages() {
   const openFriendsModal = async () => {
     if (!session) return;
     try {
-      const response = await fetch("http://localhost:3000/api/friendships", {
+      const response = await fetch(`${API_URL}/api/friendships`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (!response.ok) throw new Error("Failed to load friends");
@@ -144,7 +146,7 @@ export default function Messages() {
   const startConversation = async (friend) => {
     if (!session) return;
     try {
-      const response = await fetch("http://localhost:3000/api/conversations", {
+      const response = await fetch(`${API_URL}/api/conversations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
